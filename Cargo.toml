@@ -1,0 +1,13 @@
+[package]
+name = "effects"
+version = "0.0.1"
+edition = "2021"
+license = "Apache-2.0"
+description = "This is an experiment, and may or may not be fleshed out into a proper crate."
+repository = "https://github.com/damienstanton/effects"
+keywords = ["algebraic", "effects", "handlers"]
+
+[dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
+async-trait = "0.1"
+async-recursion = "1"
