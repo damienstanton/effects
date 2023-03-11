@@ -1,27 +1,27 @@
-#![allow(dead_code)]
 use async_recursion::async_recursion;
 use async_trait::async_trait;
 
 #[async_trait]
-pub trait Effect<A> {
-    async fn perform(&self) -> A;
+pub trait Effect: Send + Sync {
+    type Value;
+    async fn perform(&self) -> Self::Value;
 }
-pub enum Computation<A> {
-    Pure(A),
-    Effect(Box<dyn Effect<A> + Send + Sync>),
+pub enum Computation<T> {
+    Pure(T),
+    Effect(Box<dyn Effect<Value = T>>),
 }
 
 #[async_trait]
-pub trait Handler<E: Effect<A>, A> {
-    async fn handle(&mut self, effect: E) -> Computation<A>;
+pub trait Handler<T>: Send + Sync {
+    type Effect: Effect<Value = T>;
+    async fn handle(&mut self, effect: Self::Effect) -> Computation<T>;
 }
 
 #[async_recursion]
-pub async fn run_effect<E, H, A>(effect: E, handler: &mut H) -> A
+pub async fn run_effect<H, T>(effect: <H as Handler<T>>::Effect, handler: &mut H) -> T
 where
-    E: Effect<A> + Send,
-    H: Handler<E, A> + Handler<A, A> + Send,
-    A: Send + Sync + Effect<A>,
+    H: Handler<T, Effect = T>,
+    T: Send + Sync + Effect<Value = T>,
 {
     match handler.handle(effect).await {
         Computation::Pure(v) => v,
@@ -36,7 +36,7 @@ mod tests {
     struct MyEffect1;
 
     #[async_trait]
-    impl Effect<i32> for MyEffect1 {
+    impl Effect for MyEffect1 {
         async fn perform(&self) -> i32 {
             42
         }
@@ -45,7 +45,7 @@ mod tests {
     struct MyEffect2;
 
     #[async_trait]
-    impl Effect<String> for MyEffect2 {
+    impl Effect for MyEffect2 {
         async fn perform(&self) -> String {
             "hello".to_string()
         }
@@ -53,7 +53,7 @@ mod tests {
 
     struct MyHandler1;
     #[async_trait]
-    impl Handler<MyEffect1, i32> for MyHandler1 {
+    impl Handler<i32> for MyHandler1 {
         async fn handle(&mut self, effect: MyEffect1) -> Computation<i32> {
             let n = effect.perform().await;
             Computation::Pure(n + 81)
@@ -62,7 +62,7 @@ mod tests {
 
     struct MyHandler2;
     #[async_trait]
-    impl Handler<MyEffect2, String> for MyHandler2 {
+    impl Handler<String> for MyHandler2 {
         async fn handle(&mut self, effect: MyEffect2) -> Computation<String> {
             _ = effect;
             // ...
