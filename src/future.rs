@@ -6,52 +6,14 @@ use async_trait::async_trait;
 pub trait Effect<A> {
     async fn perform(&self) -> A;
 }
-
-#[async_trait]
-pub trait Handler<E: Effect<A>, A> {
-    async fn handle(&mut self, effect: E) -> Computation<A>;
-}
-
 pub enum Computation<A> {
     Pure(A),
     Effect(Box<dyn Effect<A> + Send + Sync>),
 }
 
-struct MyEffect1;
-
 #[async_trait]
-impl Effect<i32> for MyEffect1 {
-    async fn perform(&self) -> i32 {
-        42
-    }
-}
-
-struct MyEffect2;
-
-#[async_trait]
-impl Effect<String> for MyEffect2 {
-    async fn perform(&self) -> String {
-        "hello".to_string()
-    }
-}
-
-struct MyHandler1;
-#[async_trait]
-impl Handler<MyEffect1, i32> for MyHandler1 {
-    async fn handle(&mut self, effect: MyEffect1) -> Computation<i32> {
-        let n = effect.perform().await;
-        Computation::Pure(n + 81)
-    }
-}
-
-struct MyHandler2;
-#[async_trait]
-impl Handler<MyEffect2, String> for MyHandler2 {
-    async fn handle(&mut self, effect: MyEffect2) -> Computation<String> {
-        _ = effect;
-        // ...
-        Computation::Pure("world".to_string())
-    }
+pub trait Handler<E: Effect<A>, A> {
+    async fn handle(&mut self, effect: E) -> Computation<A>;
 }
 
 #[async_recursion]
@@ -70,6 +32,44 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    struct MyEffect1;
+
+    #[async_trait]
+    impl Effect<i32> for MyEffect1 {
+        async fn perform(&self) -> i32 {
+            42
+        }
+    }
+
+    struct MyEffect2;
+
+    #[async_trait]
+    impl Effect<String> for MyEffect2 {
+        async fn perform(&self) -> String {
+            "hello".to_string()
+        }
+    }
+
+    struct MyHandler1;
+    #[async_trait]
+    impl Handler<MyEffect1, i32> for MyHandler1 {
+        async fn handle(&mut self, effect: MyEffect1) -> Computation<i32> {
+            let n = effect.perform().await;
+            Computation::Pure(n + 81)
+        }
+    }
+
+    struct MyHandler2;
+    #[async_trait]
+    impl Handler<MyEffect2, String> for MyHandler2 {
+        async fn handle(&mut self, effect: MyEffect2) -> Computation<String> {
+            _ = effect;
+            // ...
+            Computation::Pure("world".to_string())
+        }
+    }
+
     #[tokio::test]
     async fn test_my_handler_async1() {
         let mut handler = MyHandler1;
