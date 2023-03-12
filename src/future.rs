@@ -37,6 +37,7 @@ mod tests {
 
     #[async_trait]
     impl Effect for MyEffect1 {
+        type Value = i32;
         async fn perform(&self) -> i32 {
             42
         }
@@ -46,6 +47,7 @@ mod tests {
 
     #[async_trait]
     impl Effect for MyEffect2 {
+        type Value = String;
         async fn perform(&self) -> String {
             "hello".to_string()
         }
@@ -54,6 +56,7 @@ mod tests {
     struct MyHandler1;
     #[async_trait]
     impl Handler<i32> for MyHandler1 {
+        type Effect = MyEffect1;
         async fn handle(&mut self, effect: MyEffect1) -> Computation<i32> {
             let n = effect.perform().await;
             Computation::Pure(n + 81)
@@ -63,6 +66,7 @@ mod tests {
     struct MyHandler2;
     #[async_trait]
     impl Handler<String> for MyHandler2 {
+        type Effect = MyEffect2;
         async fn handle(&mut self, effect: MyEffect2) -> Computation<String> {
             _ = effect;
             // ...
