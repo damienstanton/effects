@@ -9,5 +9,7 @@ keywords = ["algebraic", "effects", "handlers"]
 
 [dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }
-async-trait = "0.1"
 async-recursion = "1"
+frunk_core = "0.4"
+anyhow = "1"
+async-trait = "0.1"
