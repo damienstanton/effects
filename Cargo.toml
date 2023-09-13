@@ -1,6 +1,6 @@
 [package]
 name = "effects"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 license = "Apache-2.0"
 description = "This is an experiment, and may or may not be fleshed out into a proper crate."
